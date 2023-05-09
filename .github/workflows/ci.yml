@@ -1,0 +1,149 @@
+---
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    # branches:
+    #   - main
+  workflow_dispatch:
+    inputs:
+      debug:
+        type: choice
+        description: Debug mode
+        required: false
+        options:
+          - "true"
+          - "false"
+
+# Allow one concurrent
+concurrency:
+  group: ${{ format('{0}-{1}-{2}-{3}-{4}', github.workflow, github.event_name, github.ref, github.base_ref, github.head_ref) }}
+  cancel-in-progress: true
+
+env:
+  DEBUG: ${{ inputs.debug || secrets.ACTIONS_RUNNER_DEBUG || vars.ACTIONS_RUNNER_DEBUG || secrets.ACTIONS_STEP_DEBUG || vars.ACTIONS_STEP_DEBUG || false }}
+
+jobs:
+  validate:
+    name: Validate
+    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.draft) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            gh-workflows:
+              - '.github/workflows/**'
+            md:
+              - '**/*.md'
+
+      - name: actionlint
+        if: ${{ steps.changes.outputs.gh-workflows == 'true' }}
+        uses: raven-actions/actionlint@v1
+        with:
+          flags: "-ignore SC2086"
+
+      - name: Markdown Links
+        if: ${{ steps.changes.outputs.md == 'true' }}
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: .github/linters/.markdown-link-check.json
+
+  dog-food:
+    name: Dog food
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.get-repos.outputs.repos }}
+      count: ${{ steps.get-repos.outputs.count }}
+    steps:
+      - name: Debug Action
+        if: ${{ env.DEBUG == 'true' }}
+        uses: raven-actions/debug@v1
+        with:
+          vars-context: ${{ toJson(vars) }}
+          secrets-context: ${{ toJson(secrets) }}
+          needs-context: ${{ toJson(needs) }}
+          inputs-context: ${{ toJson(inputs) }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Repositories Action
+        id: get-repos
+        uses: ./
+        with:
+          topics: "raven-actions"
+
+  test-matrix:
+    name: Test matrix (${{ matrix.repo.name }})
+    if: ${{ needs.dog-food.outputs.repos != '[]' }}
+    runs-on: ubuntu-latest
+    needs:
+      - dog-food
+    strategy:
+      matrix:
+        repo: ${{ fromJson(needs.dog-food.outputs.repos) }}
+      max-parallel: 2
+      fail-fast: false
+    steps:
+      - name: Test
+        run: |
+          echo "Total count: ${COUNT}"
+          echo "Repo: ${REPO}"
+        env:
+          REPO: ${{ toJson(matrix.repo) }}
+          COUNT: ${{ needs.dog-food.outputs.count }}
+
+  dog-food-matrix:
+    name: Dog food (${{ matrix.os }})
+    needs:
+      - test-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Repositories Action
+        id: get-repos
+        uses: ./
+        with:
+          topics: "github-actions,actions"
+          operator: AND
+
+      - name: Test
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          echo "Total count: ${COUNT}"
+          echo "Repos: ${REPOS}"
+        shell: bash
+        env:
+          REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
+          COUNT: ${{ steps.get-repos.outputs.count }}
+
+      - name: Test
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Write-Output "Total count: ${env:COUNT}"
+          Write-Output "Repos: ${env:REPOS}"
+        shell: pwsh
+        env:
+          REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
+          COUNT: ${{ steps.get-repos.outputs.count }}
