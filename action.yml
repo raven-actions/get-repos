@@ -1,0 +1,153 @@
+# https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+---
+name: Get Repositories
+description: Get organization or user repos based on the topics filter
+author: Dariusz Porowski
+branding:
+  icon: list # https://feathericons.com
+  color: gray-dark
+
+inputs:
+  owner:
+    description: GitHub Organization or User name, default to `github.repository_owner`
+    required: false
+    default: ${{ github.repository_owner }}
+  topics:
+    description: Comma-separated list of repository topics
+    required: false
+  operator:
+    description: Operator to use when filtering repositories by topics, `OR` or `AND`, default to `AND`
+    required: false
+    default: AND
+  matrix-use:
+    description: Output to use in the matrix job?, `true` or `false`
+    required: false
+    default: ${{ true }}
+  github-token:
+    description: GitHub Token with `repo` scope, default to `github.token`
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  count:
+    description: Number of found repositories
+    value: ${{ steps.repos.outputs.count }}
+  repos:
+    description: Repositories JSON array object
+    value: ${{ steps.repos.outputs.repos }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/github-script@v6
+      id: repos
+      with:
+        script: |
+          // constraints
+          const choiceBool = ['true', 'false']
+
+          // inputs
+          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE } = process.env
+
+          // owner
+          let inputOwner = ''
+          if (INPUT_OWNER) {
+            inputOwner = INPUT_OWNER.trim()
+          } else {
+            core.setFailed('owner is required (organization or user name)')
+            process.exit(core.ExitCode.Failure)
+          }
+
+          // topics
+          const inputTopics = INPUT_TOPICS ? INPUT_TOPICS.trim().split(',').map(element => {
+            element = element.trim()
+            if (element.includes(' ')) {
+              return element.split(' ')
+            } else {
+              return element
+            }
+          }).flat().filter(element => element !== '') : []
+
+          // operator
+          const inputOperator = INPUT_OPERATOR ? INPUT_OPERATOR.trim().toUpperCase() : 'AND'
+          const choiceInputOperator = ['AND', 'OR']
+          if (!choiceInputOperator.includes(inputOperator)) {
+            core.setFailed(`Invalid operator: ${inputOperator}, accepted values: ${choiceInputOperator.join(', ')}`)
+            process.exit(core.ExitCode.Failure)
+          }
+
+          // matrix use
+          const inputMatrixUse = INPUT_MATRIX_USE ? INPUT_MATRIX_USE.trim().toLowerCase() : 'true'
+          if (!choiceBool.includes(inputMatrixUse)) {
+            core.setFailed(`Invalid matrix-use: ${inputMatrixUse}, accepted values: ${choiceBool.join(', ')}`)
+            process.exit(core.ExitCode.Failure)
+          }
+
+          core.info(`Owner: ${inputOwner}`)
+          core.info(`Topics: ${JSON.stringify(inputTopics)}`)
+          core.info(`Operator: ${inputOperator}`)
+          core.info(`Matrix Use: ${inputMatrixUse}`)
+
+          // construct search query
+          let query = `user:${inputOwner}`
+          if (inputTopics.length) {
+            query += `+${inputTopics.map(element => element).join(`+${inputOperator}+`)}+in:topics`
+          }
+          core.info(`Search query: ${query}`)
+
+          // check total count
+          const checkTotalCount = await github.rest.search.repos({
+            q: query,
+            per_page: 1,
+            page: 1
+          })
+          const totalCount = checkTotalCount.data.total_count
+          core.info(`Found repo(s): ${totalCount}`)
+
+          // check matrix limit
+          if (inputMatrixUse === 'true' && totalCount > 256) {
+            core.setFailed('Found more than 256 repos. Please adjust the filter. 256 repos is a hard limit for matrix job! ref: https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs')
+            process.exit(core.ExitCode.Failure)
+          }
+
+          // check gh api limit
+          if (totalCount > 1000) {
+            core.setFailed('Found more than 1000 repos. Please adjust the filter. 1000 repos is a hard limit for GitHub API query return!')
+            process.exit(core.ExitCode.Failure)
+          }
+
+          // get repos
+          const getRepos = (await github.paginate(github.rest.search.repos, {
+            q: query,
+            per_page: 100,
+            order: 'desc'
+          }))
+
+          // construct output
+          let repos = []
+          if (totalCount) {
+            getRepos.map(element => {
+              const repo = {
+                owner: element.owner.login,
+                name: element.name,
+                full_name: element.full_name,
+                private: element.private,
+                html_url: element.html_url,
+                fork: element.fork,
+                archived: element.archived,
+                disabled: element.disabled,
+                is_template: element.is_template,
+                visibility: element.visibility,
+                default_branch: element.default_branch
+              }
+              repos.push(repo)
+            })
+          }
+          core.setOutput('count', totalCount)
+          core.setOutput('repos', repos)
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token || env.GITHUB_TOKEN }}
+        INPUT_OWNER: ${{ inputs.owner }}
+        INPUT_TOPICS: ${{ inputs.topics }}
+        INPUT_OPERATOR: ${{ inputs.operator || 'AND' }}
+        INPUT_MATRIX_USE: ${{ inputs.matrix-use || true }}
