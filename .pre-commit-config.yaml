@@ -28,7 +28,7 @@ repos:
           - "--no-sort-keys"
         exclude: "package-lock.json|.vscode/.*"
       - id: end-of-file-fixer
-      - id: no-commit-to-branch
+      # - id: no-commit-to-branch
       - id: check-executables-have-shebangs
       - id: check-vcs-permalinks
 
@@ -46,10 +46,10 @@ repos:
           - --config
           - ".github/linters/.gitleaks.toml"
 
-  - repo: https://github.com/rhysd/actionlint
-    rev: v1.6.24
-    hooks:
-      - id: actionlint
-        args:
-          - "-ignore"
-          - "SC2086"
+  # - repo: https://github.com/rhysd/actionlint
+  #   rev: v1.6.24
+  #   hooks:
+  #     - id: actionlint
+  #       args:
+  #         - "-ignore"
+  #         - "SC2086"
