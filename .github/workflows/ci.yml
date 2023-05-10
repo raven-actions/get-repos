@@ -5,6 +5,11 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - ready_for_review
+      - synchronize
+      - reopened
   push:
     branches:
       - main
@@ -57,7 +62,7 @@ jobs:
         id: get-repos-flat
         uses: ./
         with:
-          topics: "raven-actions,composite-action"
+          topics: "raven-actions,composite-action,debug"
           format: flat
 
       - name: Test flat output
