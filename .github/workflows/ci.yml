@@ -5,6 +5,11 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - ready_for_review
+      - synchronize
+      - reopened
   push:
     branches:
       - main
@@ -27,47 +32,15 @@ env:
   DEBUG: ${{ inputs.debug || secrets.ACTIONS_RUNNER_DEBUG || vars.ACTIONS_RUNNER_DEBUG || secrets.ACTIONS_STEP_DEBUG || vars.ACTIONS_STEP_DEBUG || false }}
 
 jobs:
-  validate:
-    name: Validate
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request' && !github.event.pull_request.draft) }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Detect changes
-        uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            gh-workflows:
-              - '.github/workflows/**'
-            md:
-              - '**/*.md'
-
-      - name: actionlint
-        if: ${{ steps.changes.outputs.gh-workflows == 'true' }}
-        uses: raven-actions/actionlint@v1
-        with:
-          flags: "-ignore SC2086"
-
-      - name: Markdown Links
-        if: ${{ steps.changes.outputs.md == 'true' }}
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          config-file: .github/linters/.markdown-link-check.json
-
   dog-food:
     name: Dog food
     runs-on: ubuntu-latest
     outputs:
       repos: ${{ steps.get-repos.outputs.repos }}
       count: ${{ steps.get-repos.outputs.count }}
+      format: ${{ steps.get-repos.outputs.format }}
     steps:
-      - name: Debug Action
+      - name: Debug
         if: ${{ env.DEBUG == 'true' }}
         uses: raven-actions/debug@v1
         with:
@@ -79,11 +52,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get Repositories Action
+      - name: Get Repositories Action (json)
         id: get-repos
         uses: ./
         with:
-          topics: "raven-actions"
+          topics: "raven-actions,composite-action"
+
+      - name: Get Repositories Action (flat)
+        id: get-repos-flat
+        uses: ./
+        with:
+          topics: "raven-actions,composite-action,debug"
+          format: flat
+
+      - name: Test flat output
+        run: |
+          echo "Total count: ${COUNT}"
+          echo "Format: ${FORMAT}"
+          echo "Repos:"
+          echo -e "${REPOS}"
+        env:
+          REPOS: ${{ steps.get-repos-flat.outputs.repos }}
+          COUNT: ${{ steps.get-repos-flat.outputs.count }}
+          FORMAT: ${{ steps.get-repos-flat.outputs.format }}
 
   test-matrix:
     name: Test matrix (${{ matrix.repo.name }})
@@ -100,10 +91,12 @@ jobs:
       - name: Test
         run: |
           echo "Total count: ${COUNT}"
+          echo "Format: ${FORMAT}"
           echo "Repo: ${REPO}"
         env:
           REPO: ${{ toJson(matrix.repo) }}
           COUNT: ${{ needs.dog-food.outputs.count }}
+          FORMAT: ${{ needs.dog-food.outputs.format }}
 
   dog-food-matrix:
     name: Dog food (${{ matrix.os }})
@@ -132,18 +125,22 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           echo "Total count: ${COUNT}"
+          echo "Format: ${FORMAT}"
           echo "Repos: ${REPOS}"
         shell: bash
         env:
           REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
           COUNT: ${{ steps.get-repos.outputs.count }}
+          FORMAT: ${{ steps.get-repos.outputs.format }}
 
       - name: Test
         if: ${{ runner.os == 'Windows' }}
         run: |
           Write-Output "Total count: ${env:COUNT}"
+          Write-Output "Format: ${env:FORMAT}"
           Write-Output "Repos: ${env:REPOS}"
         shell: pwsh
         env:
           REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
           COUNT: ${{ steps.get-repos.outputs.count }}
+          FORMAT: ${{ steps.get-repos.outputs.format }}
