@@ -27,14 +27,24 @@ inputs:
     description: GitHub Token with `repo` scope, default to `github.token`
     required: false
     default: ${{ github.token }}
+  format:
+    description: Output format, `json` or `flat`, default to `json`
+    required: false
+    default: json
+  delimiter:
+    description: Delimiter to use when `format` is `flat`, default to `\n`
+    required: false
 
 outputs:
   count:
     description: Number of found repositories
     value: ${{ steps.repos.outputs.count }}
   repos:
-    description: Repositories JSON array object
+    description: Repositories
     value: ${{ steps.repos.outputs.repos }}
+  format:
+    description: Number of found repositories
+    value: ${{ steps.repos.outputs.format }}
 
 runs:
   using: composite
@@ -47,7 +57,10 @@ runs:
           const choiceBool = ['true', 'false']
 
           // inputs
-          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE } = process.env
+          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE, INPUT_OUTPUT_FORMAT, INPUT_FLAT_DELIMITER } = process.env
+
+          // for local testing only
+          //const github = gh.getOctokit(GITHUB_TOKEN)
 
           // owner
           let inputOwner = ''
@@ -83,10 +96,26 @@ runs:
             process.exit(core.ExitCode.Failure)
           }
 
+          // format
+          const inputOutputFormat = INPUT_OUTPUT_FORMAT ? INPUT_OUTPUT_FORMAT.trim().toLowerCase() : 'json'
+          const choiceInputOutputFormat = ['json', 'flat']
+          if (!choiceInputOutputFormat.includes(inputOutputFormat)) {
+            core.setFailed(`Invalid format: ${inputOutputFormat}, accepted values: ${choiceInputOutputFormat.join(', ')}`)
+            process.exit(core.ExitCode.Failure)
+          }
+
+          // delimiter
+          const inputDelimiter = INPUT_FLAT_DELIMITER ? INPUT_FLAT_DELIMITER.trim() : `\n`
+          if (inputOutputFormat === 'flat' && inputDelimiter === '') {
+            core.setFailed('delimiter is required when format is `flat`')
+            process.exit(core.ExitCode.Failure)
+          }
+
           core.info(`Owner: ${inputOwner}`)
           core.info(`Topics: ${JSON.stringify(inputTopics)}`)
           core.info(`Operator: ${inputOperator}`)
-          core.info(`Matrix Use: ${inputMatrixUse}`)
+          core.info(`Output Format: ${inputOutputFormat}`)
+          core.info(`Flat format delimiter: ${inputDelimiter}`)
 
           // construct search query
           let query = `user:${inputOwner}`
@@ -105,7 +134,7 @@ runs:
           core.info(`Found repo(s): ${totalCount}`)
 
           // check matrix limit
-          if (inputMatrixUse === 'true' && totalCount > 256) {
+          if (inputOutputFormat === 'json' && inputMatrixUse === 'true' && totalCount > 256) {
             core.setFailed('Found more than 256 repos. Please adjust the filter. 256 repos is a hard limit for matrix job! ref: https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs')
             process.exit(core.ExitCode.Failure)
           }
@@ -143,11 +172,24 @@ runs:
               repos.push(repo)
             })
           }
+
+          // format output
+          if (inputOutputFormat === 'flat') {
+            repos = repos.map(element => {
+              return element.full_name
+            })
+            repos = repos.join(inputDelimiter)
+          }
+
+          // set outputs
           core.setOutput('count', totalCount)
           core.setOutput('repos', repos)
+          core.setOutput('format', inputOutputFormat)
       env:
         GITHUB_TOKEN: ${{ inputs.github-token || env.GITHUB_TOKEN }}
         INPUT_OWNER: ${{ inputs.owner }}
         INPUT_TOPICS: ${{ inputs.topics }}
         INPUT_OPERATOR: ${{ inputs.operator || 'AND' }}
         INPUT_MATRIX_USE: ${{ inputs.matrix-use || true }}
+        INPUT_OUTPUT_FORMAT: ${{ inputs.format || 'json' }}
+        INPUT_FLAT_DELIMITER: ${{ inputs.delimiter || '\n' }}
