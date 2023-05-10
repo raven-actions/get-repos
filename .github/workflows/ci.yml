@@ -65,7 +65,7 @@ jobs:
           echo "Total count: ${COUNT}"
           echo "Format: ${FORMAT}"
           echo "Repos:"
-          echo "${REPOS}"
+          echo -e "${REPOS}"
         env:
           REPOS: ${{ steps.get-repos-flat.outputs.repos }}
           COUNT: ${{ steps.get-repos-flat.outputs.count }}
@@ -120,18 +120,22 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         run: |
           echo "Total count: ${COUNT}"
+          echo "Format: ${FORMAT}"
           echo "Repos: ${REPOS}"
         shell: bash
         env:
           REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
           COUNT: ${{ steps.get-repos.outputs.count }}
+          FORMAT: ${{ steps.get-repos.outputs.format }}
 
       - name: Test
         if: ${{ runner.os == 'Windows' }}
         run: |
           Write-Output "Total count: ${env:COUNT}"
+          Write-Output "Format: ${env:FORMAT}"
           Write-Output "Repos: ${env:REPOS}"
         shell: pwsh
         env:
           REPOS: ${{ toJson(steps.get-repos.outputs.repos) }}
           COUNT: ${{ steps.get-repos.outputs.count }}
+          FORMAT: ${{ steps.get-repos.outputs.format }}

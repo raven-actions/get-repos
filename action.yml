@@ -1,7 +1,7 @@
 # https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
 ---
 name: Get Repositories
-description: Get organization or user repos based on the topics filter
+description: 🗄️ Get organization or user repos based on the topics filter (with logic AND/OR) to use in the matrix job or another action.
 author: Dariusz Porowski
 branding:
   icon: list # https://feathericons.com
@@ -23,10 +23,6 @@ inputs:
     description: Output to use in the matrix job?, `true` or `false`
     required: false
     default: ${{ true }}
-  github-token:
-    description: GitHub Token with `repo` scope, default to `github.token`
-    required: false
-    default: ${{ github.token }}
   format:
     description: Output format, `json` or `flat`, default to `json`
     required: false
@@ -34,6 +30,10 @@ inputs:
   delimiter:
     description: Delimiter to use when `format` is `flat`, default to `\n`
     required: false
+  github-token:
+    description: GitHub Token with `repo` scope, default to `github.token`
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   count:
@@ -43,7 +43,7 @@ outputs:
     description: Repositories
     value: ${{ steps.repos.outputs.repos }}
   format:
-    description: Number of found repositories
+    description: Output format
     value: ${{ steps.repos.outputs.format }}
 
 runs:
@@ -57,10 +57,7 @@ runs:
           const choiceBool = ['true', 'false']
 
           // inputs
-          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE, INPUT_OUTPUT_FORMAT, INPUT_FLAT_DELIMITER } = process.env
-
-          // for local testing only
-          //const github = gh.getOctokit(GITHUB_TOKEN)
+          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE, INPUT_OUTPUT_FORMAT, INPUT_FLAT_DELIMITER} = process.env
 
           // owner
           let inputOwner = ''
@@ -192,4 +189,4 @@ runs:
         INPUT_OPERATOR: ${{ inputs.operator || 'AND' }}
         INPUT_MATRIX_USE: ${{ inputs.matrix-use || true }}
         INPUT_OUTPUT_FORMAT: ${{ inputs.format || 'json' }}
-        INPUT_FLAT_DELIMITER: ${{ inputs.delimiter || '\n' }}
+        INPUT_FLAT_DELIMITER: ${{ inputs.delimiter }}
