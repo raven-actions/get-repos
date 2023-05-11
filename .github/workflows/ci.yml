@@ -52,16 +52,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get GitHub Token
+        uses: wow-actions/use-app-token@v2
+        id: get-token
+        with:
+          app_id: ${{ secrets.ORG_BOT_APP_ID }}
+          private_key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
+          fallback: ${{ github.token }}
+
       - name: Get Repositories Action (json)
         id: get-repos
         uses: ./
         with:
+          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
           topics: "raven-actions,composite-action"
 
       - name: Get Repositories Action (flat)
         id: get-repos-flat
         uses: ./
         with:
+          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
           topics: "raven-actions,composite-action,debug"
           format: flat
 
@@ -114,10 +124,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get GitHub Token
+        uses: wow-actions/use-app-token@v2
+        id: get-token
+        with:
+          app_id: ${{ secrets.ORG_BOT_APP_ID }}
+          private_key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
+          fallback: ${{ github.token }}
+
       - name: Get Repositories Action
         id: get-repos
         uses: ./
         with:
+          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
           topics: "github-actions,actions"
           operator: AND
 
