@@ -29,7 +29,7 @@ You can also use this action to get a **flat** output with your delimiter for di
 
 ### Quick Start
 
-Example GitHub Workflow, to get all repositories that contain **ALL** listed topics (`AND` operator is by default). Follow [📥 Inputs](#-inputs) to adjust behavior to `OR`. Then the result will be: get all repos with **ANY** listed topics.
+Example GitHub Workflow, to get all repositories that contain **ANY** of listed topics (`OR` operator is by default). Follow [📥 Inputs](#-inputs) to adjust behavior to `AND`. Then the result will be: get all repos with **ALL** listed topics.
 
 ```yaml
 name: Sync Repositories
@@ -50,7 +50,6 @@ jobs:
         uses: raven-actions/get-repos@v1
         with:
           topics: "sync,docs,managed"
-          operator: OR  # logic operator for topics match, OR returns repos that have any of provided topics
 
   sync-repos:
     name: Sync (${{ matrix.repo.name }})
@@ -79,7 +78,7 @@ jobs:
   uses: raven-actions/get-repos@v1
   with:
     topics: "raven-actions,composite-action"
-    operator: AND  # logic operator for topics match, AND returns repos that have all of provided topics, AND is default
+    operator: AND  # logic operator for topics match, AND returns repos that have all of provided topics, OR is default
     format: flat
     delimiter: ","  # default one is '\n'
 
@@ -101,7 +100,7 @@ jobs:
 |:--------------:|:--------:|:--------:|:-------------------------:|-----------------------------------------------------------------------------------------------------|
 |    `owner`     |  false   | `string` | `github.repository_owner` | The organization or user name                                                                       |
 |    `topics`    |  false   | `string` |         _not set_         | Comma-separated list of repository topics                                                           |
-|   `operator`   |  false   | `string` |           `AND`           | Logic operator to use when filtering repositories by topics, `OR` or `AND`                          |
+|   `operator`   |  false   | `string` |           `OR`            | Logic operator to use when filtering repositories by topics, `OR` or `AND`                          |
 |  `matrix-use`  |  false   |  `bool`  |          `true`           | Output to be used in matrix job? It just checks that the returned query has not exceeded 256 repos  |
 |    `format`    |  false   | `string` |          `json`           | Output format, `json` or `flat`, default to `json`                                                  |
 |  `delimiter`   |  false   | `string` |           `\n`            | Delimiter to use when `format` is `flat`, default to `\n`                                           |
