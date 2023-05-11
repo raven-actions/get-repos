@@ -16,9 +16,9 @@ inputs:
     description: Comma-separated list of repository topics
     required: false
   operator:
-    description: Operator to use when filtering repositories by topics, `OR` or `AND`, default to `AND`
+    description: Operator to use when filtering repositories by topics, `OR` or `AND`, default to `OR`
     required: false
-    default: AND
+    default: OR
   matrix-use:
     description: Output to use in the matrix job?, `true` or `false`
     required: false
@@ -52,12 +52,13 @@ runs:
     - uses: actions/github-script@v6
       id: repos
       with:
+        github-token: ${{ inputs.github-token || env.GITHUB_TOKEN }}
         script: |
           // constraints
           const choiceBool = ['true', 'false']
 
           // inputs
-          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE, INPUT_OUTPUT_FORMAT, INPUT_FLAT_DELIMITER} = process.env
+          const { INPUT_OWNER, INPUT_TOPICS, INPUT_OPERATOR, INPUT_MATRIX_USE, INPUT_OUTPUT_FORMAT, INPUT_FLAT_DELIMITER } = process.env
 
           // owner
           let inputOwner = ''
@@ -79,7 +80,7 @@ runs:
           }).flat().filter(element => element !== '') : []
 
           // operator
-          const inputOperator = INPUT_OPERATOR ? INPUT_OPERATOR.trim().toUpperCase() : 'AND'
+          const inputOperator = INPUT_OPERATOR ? INPUT_OPERATOR.trim().toUpperCase() : 'OR'
           const choiceInputOperator = ['AND', 'OR']
           if (!choiceInputOperator.includes(inputOperator)) {
             core.setFailed(`Invalid operator: ${inputOperator}, accepted values: ${choiceInputOperator.join(', ')}`)
@@ -183,10 +184,9 @@ runs:
           core.setOutput('repos', repos)
           core.setOutput('format', inputOutputFormat)
       env:
-        GITHUB_TOKEN: ${{ inputs.github-token || env.GITHUB_TOKEN }}
         INPUT_OWNER: ${{ inputs.owner }}
         INPUT_TOPICS: ${{ inputs.topics }}
-        INPUT_OPERATOR: ${{ inputs.operator || 'AND' }}
+        INPUT_OPERATOR: ${{ inputs.operator || 'OR' }}
         INPUT_MATRIX_USE: ${{ inputs.matrix-use || true }}
         INPUT_OUTPUT_FORMAT: ${{ inputs.format || 'json' }}
         INPUT_FLAT_DELIMITER: ${{ inputs.delimiter }}
