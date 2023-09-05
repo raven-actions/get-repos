@@ -50,7 +50,7 @@ jobs:
           inputs-context: ${{ toJson(inputs) }}
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get GitHub Token
         uses: wow-actions/use-app-token@v2
@@ -122,7 +122,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get GitHub Token
         uses: wow-actions/use-app-token@v2
