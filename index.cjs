@@ -43,16 +43,16 @@ module.exports = async ({ context, github, core }) => {
     }
 
     core.info(`Owner: ${inputOwner}`)
-    core.info(`Topics: ${JSON.stringify(inputTopics)}`)
+    core.info(`Topics: ${JSON.stringify(topics)}`)
     core.info(`Operator: ${inputOperator}`)
     core.info(`Matrix Use: ${inputMatrixUse}`)
     core.info(`Format: ${inputFormat}`)
-    core.info(`Delimiter: ${inputDelimiter}`)
+    core.info(`Delimiter: ${inputDelimiter === `\n` ? '\\n' : inputDelimiter}`)
 
     // construct search query
     let searchQuery = `user:${inputOwner}`
-    if (inputTopics.length) {
-      searchQuery += `+${inputTopics.map((element) => element).join(`+${inputOperator}+`)}+in:topics`
+    if (topics.length > 0) {
+      searchQuery += `+${topics.map((element) => element).join(`+${inputOperator}+`)}+in:topics`
     }
     core.info(`Search query: ${searchQuery}`)
 
