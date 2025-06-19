@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 ---
 name: Linter
 
@@ -10,12 +11,17 @@ on:
       - ready_for_review
       - synchronize
       - reopened
+  merge_group:
   push:
     branches:
       - main
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   linter:
-    name: Linter
     uses: raven-actions/.workflows/.github/workflows/__linter.yml@main
     secrets: inherit
