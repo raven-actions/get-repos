@@ -1,23 +1,28 @@
 module.exports = async ({ context, github, core }) => {
+  console.log(context)
   try {
-    const inputOwner = core.getInput('owner') || context.repo.owner
+    const inputOwner = core.getInput('owner', { required: true }) || context.repo.owner
     const inputTopics = core.getInput('topics')
-    const inputOperator = core.getInput('operator') || 'OR'
+    const inputOperator = core.getInput('operator', { required: true }) || 'OR'
     const inputMatrixUse = core.getBooleanInput('matrix_use') || true
-    const inputFormat = core.getInput('format') || 'json'
+    const inputFormat = core.getInput('format', { required: true }) || 'json'
     const inputDelimiter = core.getInput('delimiter') || `\n`
 
     // constraints
     const choiceOperator = ['AND', 'OR']
-    const choiceOutputFormat = ['json', 'flat']
+    const choiceFormat = ['json', 'flat']
 
-    // validate choice inputs
+    // validate inputs
+    if (inputOwner.trim() === '') {
+      throw new Error('Owner is required')
+    }
+
     if (!choiceOperator.includes(inputOperator)) {
       throw new Error(`Invalid operator: ${inputOperator}, accepted values: ${choiceOperator.join(', ')}`)
     }
 
-    if (!choiceOutputFormat.includes(inputFormat)) {
-      throw new Error(`Invalid format: ${inputFormat}, accepted values: ${choiceOutputFormat.join(', ')}`)
+    if (!choiceFormat.includes(inputFormat)) {
+      throw new Error(`Invalid format: ${inputFormat}, accepted values: ${choiceFormat.join(', ')}`)
     }
 
     if (inputFormat === 'flat' && inputDelimiter === '') {
@@ -66,16 +71,18 @@ module.exports = async ({ context, github, core }) => {
     core.info(`Found repo(s): ${totalCount}`)
 
     // check matrix limit
-    if (inputFormat === 'json' && inputMatrixUse === 'true' && totalCount > 256) {
+    const totalCountMatrixLimit = 256
+    if (inputFormat === 'json' && inputMatrixUse === 'true' && totalCount > totalCountMatrixLimit) {
       throw new Error(
-        'Found more than 256 repos. Please adjust the filter. 256 repos is a hard limit for matrix job! docs: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow'
+        `Found more than ${totalCountMatrixLimit} repos. Please adjust the filter. ${totalCountMatrixLimit} repos is a hard limit for matrix job! docs: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow`
       )
     }
 
     // check gh api limit
-    if (totalCount > 1000) {
+    const totalCountAPILimit = 1000
+    if (totalCount > totalCountAPILimit) {
       throw new Error(
-        'Found more than 1000 repos. Please adjust the filter. 1000 repos is a hard limit for GitHub API query return!'
+        `Found more than ${totalCountAPILimit} repos. Please adjust the filter. ${totalCountAPILimit} repos is a hard limit for GitHub API query return!`
       )
     }
 
