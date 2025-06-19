@@ -20,7 +20,7 @@ module.exports = async ({ context, github, core }) => {
       throw new Error(`Invalid format: ${inputFormat}, accepted values: ${choiceOutputFormat.join(', ')}`)
     }
 
-    if (inputFormat === 'flat' && inputFlatDelimiter === '') {
+    if (inputFormat === 'flat' && inputDelimiter === '') {
       throw new Error('Delimiter is required when format is `flat`')
     }
 
