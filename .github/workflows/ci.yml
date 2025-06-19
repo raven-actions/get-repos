@@ -94,16 +94,16 @@ jobs:
           format: flat
           delimiter: ","
 
-      - name: Test flat output
+      - name: Test flat delimiter output
         run: |
           echo "Total count: ${COUNT}"
           echo "Format: ${FORMAT}"
           echo "Repos:"
           echo -e "${REPOS}"
         env:
-          REPOS: ${{ steps.get-repos-flat.outputs.repos }}
-          COUNT: ${{ steps.get-repos-flat.outputs.count }}
-          FORMAT: ${{ steps.get-repos-flat.outputs.format }}
+          REPOS: ${{ steps.get-repos-flat-delimiter.outputs.repos }}
+          COUNT: ${{ steps.get-repos-flat-delimiter.outputs.count }}
+          FORMAT: ${{ steps.get-repos-flat-delimiter.outputs.format }}
 
   test-matrix:
     name: Test matrix (${{ matrix.repo.name }})
