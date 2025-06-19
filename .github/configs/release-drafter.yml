@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/release-drafter/release-drafter/master/schema.json
 ---
 name-template: v$RESOLVED_VERSION
 tag-template: v$RESOLVED_VERSION
@@ -18,10 +19,13 @@ categories:
     labels:
       - major
       - breaking
-  - title: 🚀 Features
+  - title: ✨ Features
     labels:
       - minor
       - feature
+  - title: 🥂 Improvements
+    labels:
+      - improvement
       - enhancement
   - title: 🐛 Bug Fixes
     labels:
@@ -32,7 +36,7 @@ categories:
     labels:
       - maintenance
       - chore
-  - title: 📚 Documentation
+  - title: 📝 Documentation
     labels:
       - doc
       - docs
@@ -44,7 +48,7 @@ categories:
       - dependencies
       - deps
     collapse-after: 3
-  - title: 🚨 Security
+  - title: 🔒 Security
     label: security
     collapse-after: 3
 exclude-labels:
@@ -60,10 +64,11 @@ version-resolver:
     labels:
       - minor
       - feature
-      - enhancement
   patch:
     labels:
       - patch
+      - improvement
+      - enhancement
       - fix
       - bugfix
       - bug

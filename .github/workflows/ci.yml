@@ -16,12 +16,10 @@ on:
   workflow_dispatch:
     inputs:
       debug:
-        type: choice
         description: Debug mode
+        type: boolean
         required: false
-        options:
-          - "true"
-          - "false"
+        default: true
 
 # Allow one concurrent
 concurrency:
@@ -30,6 +28,9 @@ concurrency:
 
 env:
   DEBUG: ${{ inputs.debug || secrets.ACTIONS_RUNNER_DEBUG || vars.ACTIONS_RUNNER_DEBUG || secrets.ACTIONS_STEP_DEBUG || vars.ACTIONS_STEP_DEBUG || false }}
+
+permissions:
+  contents: read
 
 jobs:
   dog-food:
@@ -42,38 +43,56 @@ jobs:
     steps:
       - name: Debug
         if: ${{ env.DEBUG == 'true' }}
-        uses: raven-actions/debug@v1
+        uses: raven-actions/debug@13e7c5b2e0436a1b85276087eba43ec7d46bd955 # v1.1.0
         with:
           vars-context: ${{ toJson(vars) }}
-          secrets-context: ${{ toJson(secrets) }}
           needs-context: ${{ toJson(needs) }}
           inputs-context: ${{ toJson(inputs) }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Get GitHub Token
-        uses: wow-actions/use-app-token@v2
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
         id: get-token
         with:
-          app_id: ${{ secrets.ORG_BOT_APP_ID }}
-          private_key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
-          fallback: ${{ github.token }}
+          app-id: ${{ secrets.ORG_BOT_APP_ID }}
+          private-key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
 
       - name: Get Repositories Action (json)
         id: get-repos
         uses: ./
         with:
-          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
+          github-token: ${{ steps.get-token.outputs.token }}
           topics: "raven-actions,composite-action"
 
       - name: Get Repositories Action (flat)
         id: get-repos-flat
         uses: ./
         with:
-          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
+          github-token: ${{ steps.get-token.outputs.token }}
           topics: "raven-actions,composite-action,debug"
           format: flat
+
+      - name: Test flat output
+        run: |
+          echo "Total count: ${COUNT}"
+          echo "Format: ${FORMAT}"
+          echo "Repos:"
+          echo -e "${REPOS}"
+        env:
+          REPOS: ${{ steps.get-repos-flat.outputs.repos }}
+          COUNT: ${{ steps.get-repos-flat.outputs.count }}
+          FORMAT: ${{ steps.get-repos-flat.outputs.format }}
+
+      - name: Get Repositories Action (flat delimiter)
+        id: get-repos-flat-delimiter
+        uses: ./
+        with:
+          github-token: ${{ steps.get-token.outputs.token }}
+          topics: "raven-actions,composite-action,debug"
+          format: flat
+          delimiter: ","
 
       - name: Test flat output
         run: |
@@ -122,21 +141,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Get GitHub Token
-        uses: wow-actions/use-app-token@v2
+        uses: actions/create-github-app-token@df432ceedc7162793a195dd1713ff69aefc7379e # v2.0.6
         id: get-token
         with:
-          app_id: ${{ secrets.ORG_BOT_APP_ID }}
-          private_key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
-          fallback: ${{ github.token }}
+          app-id: ${{ secrets.ORG_BOT_APP_ID }}
+          private-key: ${{ secrets.ORG_BOT_PRIVATE_KEY }}
 
       - name: Get Repositories Action
         id: get-repos
         uses: ./
         with:
-          github-token: ${{ steps.get-token.outputs.BOT_TOKEN }}
+          github-token: ${{ steps.get-token.outputs.token }}
           topics: "github-actions,actions"
           operator: AND
 
