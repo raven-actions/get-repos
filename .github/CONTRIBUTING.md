@@ -6,7 +6,7 @@ I appreciate your interest in contributing to the project! This document outline
 
 To contribute, please follow these steps:
 
-1. Fork the project name repository on GitHub.
+1. Fork the project repository on GitHub.
 1. Create a new branch for your feature or bug fix.
 1. Make sure the `README.md` and any other relevant documentation are kept up-to-date.
 1. Make your changes and commit them with descriptive commit messages; check [Conventional Commits](https://www.conventionalcommits.org) as a suggestion.
@@ -16,9 +16,9 @@ To contribute, please follow these steps:
 
 ## 🔰 Code of Conduct
 
-All contributors are expected to adhere to the project name code of conduct. Therefore, please review it before contributing [`Code of Conduct`](https://github.com/raven-actions/get-repos/blob/main/.github/CODE_OF_CONDUCT.md).
+All contributors are expected to adhere to the project name code of conduct. Therefore, please review it before contributing [`Code of Conduct`](CODE_OF_CONDUCT.md)
 
-## 📄 License
+## 🛡️ License
 
 By contributing to this project, you agree that your contributions will be licensed under the project license.
 
