@@ -1,7 +1,6 @@
-module.exports = async ({ context, github, core }) => {
-  console.log(context)
+module.exports = async ({ github, core }) => {
   try {
-    const inputOwner = core.getInput('owner', { required: true }) || context.repo.owner
+    const inputOwner = core.getInput('owner', { required: true })
     const inputTopics = core.getInput('topics')
     const inputOperator = core.getInput('operator', { required: true }) || 'OR'
     const inputMatrixUse = core.getBooleanInput('matrix_use') || true

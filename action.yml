@@ -58,7 +58,7 @@ runs:
           const path = require('path')
           const actionPath = path.join(process.env.GITHUB_ACTION_PATH, 'index.cjs')
           const script = require(actionPath)
-          await script({ context, github, core })
+          await script({ github, core })
       env:
         INPUT_OWNER: ${{ inputs.owner }}
         INPUT_TOPICS: ${{ inputs.topics }}
