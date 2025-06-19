@@ -66,7 +66,7 @@ module.exports = async ({ context, github, core }) => {
     core.info(`Found repo(s): ${totalCount}`)
 
     // check matrix limit
-    if (inputOutputFormat === 'json' && inputMatrixUse === 'true' && totalCount > 256) {
+    if (inputFormat === 'json' && inputMatrixUse === 'true' && totalCount > 256) {
       throw new Error(
         'Found more than 256 repos. Please adjust the filter. 256 repos is a hard limit for matrix job! docs: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow'
       )
