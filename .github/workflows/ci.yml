@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Debug
         if: ${{ env.DEBUG == 'true' }}
-        uses: raven-actions/debug@13e7c5b2e0436a1b85276087eba43ec7d46bd955 # v1.1.0
+        uses: raven-actions/debug@9dbdeb7eea607a7d73411895c65987e71d59a466 # v1.2.0
         with:
           vars-context: ${{ toJson(vars) }}
           needs-context: ${{ toJson(needs) }}
