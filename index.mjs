@@ -1,11 +1,11 @@
-module.exports = async ({ github, core }) => {
+export default async ({ github, core }) => {
   try {
-    const inputOwner = core.getInput('owner', { required: true })
+    const inputOwner = core.getInput('owner')
     const inputTopics = core.getInput('topics')
-    const inputOperator = core.getInput('operator', { required: true }) || 'OR'
-    const inputMatrixUse = core.getBooleanInput('matrix_use') || true
-    const inputFormat = core.getInput('format', { required: true }) || 'json'
-    const inputDelimiter = core.getInput('delimiter') || `\n`
+    const inputOperator = core.getInput('operator') || 'OR'
+    const inputMatrixUse = core.getBooleanInput('matrix_use')
+    const inputFormat = core.getInput('format') || 'json'
+    const inputDelimiter = core.getInput('delimiter', { trimWhitespace: false }) || `\n`
 
     // constraints
     const choiceOperator = ['AND', 'OR']
@@ -56,7 +56,7 @@ module.exports = async ({ github, core }) => {
     // construct search query
     let searchQuery = `user:${inputOwner}`
     if (topics.length > 0) {
-      searchQuery += `+${topics.map((element) => element).join(`+${inputOperator}+`)}+in:topics`
+      searchQuery += ` ${topics.join(` ${inputOperator} `)} in:topics`
     }
     core.info(`Search query: ${searchQuery}`)
 
@@ -71,7 +71,7 @@ module.exports = async ({ github, core }) => {
 
     // check matrix limit
     const totalCountMatrixLimit = 256
-    if (inputFormat === 'json' && inputMatrixUse === 'true' && totalCount > totalCountMatrixLimit) {
+    if (inputFormat === 'json' && inputMatrixUse && totalCount > totalCountMatrixLimit) {
       throw new Error(
         `Found more than ${totalCountMatrixLimit} repos. Please adjust the filter. ${totalCountMatrixLimit} repos is a hard limit for matrix job! docs: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow`
       )
