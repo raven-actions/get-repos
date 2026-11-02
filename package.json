@@ -1,6 +1,7 @@
 {
+  "type": "module",
   "main": "composite",
   "files": [
-    "index.cjs"
+    "index.mjs"
   ]
 }

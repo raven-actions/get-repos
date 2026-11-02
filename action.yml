@@ -55,9 +55,10 @@ runs:
       with:
         github-token: ${{ inputs.github-token || env.GITHUB_TOKEN }}
         script: |
-          const path = require('path')
-          const actionPath = path.join(process.env.GITHUB_ACTION_PATH, 'index.cjs')
-          const script = require(actionPath)
+          const { join } = await import('node:path')
+          const { pathToFileURL } = await import('node:url')
+          const actionPath = join(process.env.GITHUB_ACTION_PATH, 'index.mjs')
+          const { default: script } = await import(pathToFileURL(actionPath).href)
           await script({ github, core })
       env:
         INPUT_OWNER: ${{ inputs.owner }}
